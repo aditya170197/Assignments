@@ -1,0 +1,43 @@
+
+1.	Match (n:TypeDeclaration) where n.entity_type= "interface" or n.entity_type= "class" Return n Limit 25
+
+2.	MATCH (n:PackageDeclaration)<-[:CONTAIN_IN]-(m:TypeDeclaration{entity_type:"class"}) RETURN n,m LIMIT 25
+
+3.	Match (n:TypeDeclaration{entity_type:"class",simplename:"OrcMage"})-[:EXTENDS*0..100]->(m:TypeDeclaration{entity_type:"class"}) with collect(m) as cli
+UNWIND cli as cl
+MATCH (u:MethodDeclaration{isConstructor:"False"})<-[:member]-(cl) where u.modifiers=~".*public.*" with collect(u) as mli,cli
+UNWIND mli as ml
+MATCH (u:MethodDeclaration{isConstructor:"False"})<-[:OVERRIDES]-(ml) where u.modifiers=~".*public.*" with collect(u) as rli,mli,cli
+UNWIND mli as ml
+UNWIND rli as rl
+MATCH(n:MethodDeclaration{isConstructor:"False"}) where n in mli AND NOT n in rli return n
+
+4.	Match (n:TypeDeclaration{simplename:"OrcMage"})-[:EXTENDS*]->(m:TypeDeclaration) where m.entity_type="class" OR m.entity_type="interface" return n,m LIMIT 25
+
+5.	Match (n:IfStatement)-[:condition]->(m:SimpleName) return n,m LIMIT 100
+
+6.	Match (n:IfStatement)-[:condition]->(m) WHERE NOT (n:IfStatement)-[:condition]->(m:SimpleName) return n,m LIMIT 100
+
+7.	MATCH (n:PackageDeclaration)<-[:CONTAIN_IN]-(m:TypeDeclaration{entity_type:"class",simplename:"OrcMage"}) RETURN n,m LIMIT 25
+
+8.	Match (n:TypeDeclaration{entity_type:"class",simplename:"OrcMage"})-[:EXTENDS*0..100]->(m:TypeDeclaration{entity_type:"class"}) with collect(m) as cli
+UNWIND cli as cl
+OPTIONAL MATCH (u:MethodDeclaration{isConstructor:"False"})<-[:member]-(cl) where u.modifiers=~".*public.*" with collect(u) as mli,cli
+UNWIND mli as ml
+OPTIONAL MATCH (u:MethodDeclaration{isConstructor:"False"})<-[:OVERRIDES]-(ml) where u.modifiers=~".*public.*" with collect(u) as rli,mli,cli
+UNWIND mli as ml
+UNWIND rli as rl
+OPTIONAL MATCH(n:MethodDeclaration{isConstructor:"False"}) where n in mli AND NOT n in rli with collect(n) as nli
+OPTIONAL Match (n:TypeDeclaration{entity_type:"class",simplename:"OrcMage"})<-[:EXTENDED_BY*0..100]-(m:TypeDeclaration{entity_type:"class"}) with collect(m) as cli,nli
+UNWIND cli as cl
+OPTIONAL MATCH (u:MethodDeclaration{isConstructor:"False"})<-[:member]-(cl) where u.modifiers=~".*public.*" with collect(u) as mli,cli,nli
+UNWIND mli as ml
+OPTIONAL MATCH (u:MethodDeclaration{isConstructor:"False"})-[:OVERRIDDEN_BY]->(ml) where u.modifiers=~".*public.*" with collect(u) as rli,mli,cli,nli
+OPTIONAL MATCH(n:MethodDeclaration{isConstructor:"False"}) where n in mli AND NOT n in rli with collect(n) as nli1,nli
+MATCH (n:MethodDeclaration{isConstructor:"False"}) where n in nli or n in nli1 return sum(toInteger(n.Cyclomatic))
+
+9.	MATCH (n:MethodDeclaration) where toInt(n.CountStmt)>9 return n.simplename LIMIT 25
+
+10.	MATCH (n:MethodDeclaration)-[:parameter]->(m:SingleVariableDeclaration) with n.simplename as name, count(*) as param_count where param_count > 3 return name,param_count
+
+11.	MATCH (n:MethodDeclaration) where toInt(n.CountLineCode)>49 return n.simplename LIMIT 25
