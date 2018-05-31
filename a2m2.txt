@@ -1,0 +1,15 @@
+1.	Match (c:TypeDeclaration{entity_type:"class"})-[:member]->(m:MethodDeclaration{isConstructor:"True"}) WHERE m.simplename=c.simplename AND m.modifiers =~ ".*private.*" WITH c
+MATCH (c)-[:member]->(m:MethodDeclaration{isConstructor:"False"}),(m)-[:return]->(a:SimpleType) where a.name=c.simplename AND m.modifiers=~".*public, static.*" WITH c
+MATCH (c)-[:member*1..10]-(n:FieldDeclaration)-[:type]->(o:SimpleType) where o.name=c.simplename AND n.modifiers=~".*private, static.*" return c LIMIT 25
+
+3	MATCH (n:TypeDeclaration{entity_type:"class"})-[:member*1..100]->(m:TypeDeclaration{entity_type:"class"}) where m.modifiers=~ ".*public, static.*" with n,m
+MATCH (n)-[:DEFINE]->(m1:MethodDeclaration{isConstructor:"True"})-[:parameter]->(s:SingleVariableDeclaration)-[:type]->(k:SimpleType) where m1.modifiers=~".*private.*" AND k.name=m.simplename with n,m
+MATCH (m)-[:DEFINE]->(r:MethodDeclaration{isConstructor:"True"}) Where r.modifiers=~".*public.*" with n,m
+MATCH (m)-[:member]->(r:FieldDeclaration)-[:type]->(s:SimpleType) WHERE r.modifiers=~".*private.*" with n,m,collect(s.name) as n1,count(s.name) as a1
+MATCH (n)-[:member]->(r:FieldDeclaration)-[:type]->(s:SimpleType) WHERE r.modifiers=~".*private.*" with n,m,n1,a1,collect(s) as n2,count(s.name) as b1 
+UNWIND n2 as l1
+OPTIONAL MATCH (b)<-[*0]-(l1) WHERE b.name in n1 WITH n,m,a1,b1,count(*) as c1
+OPTIONAL MATCH (m)-[:member]->(r:FieldDeclaration)-[:type]->(s:SimpleType) with n,m,a1,b1,c1,count(s.name) as a2
+MATCH (n)-[:member]->(r:FieldDeclaration)-[:type]->(s:SimpleType) with n,m,a1,b1,c1,a2,count(s.name) as b2 
+MATCH (n) WHERE a1=a2 AND b1=b2 AND c1=b1 AND c1=a1 with n,m
+MATCH (m)-[:DEFINE]->(r:MethodDeclaration)-[:return]->(s:SimpleType) where s.name= n.simplename AND r.modifiers=~".*public.*" return n
